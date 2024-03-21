@@ -7,6 +7,15 @@ let timeRemaining = 30;
 let currentScore = 0;
 let gameState = 'starting';
 
+let music;
+let gameOverSound;
+let squishSound;
+let missSound;
+let bugAmbience;
+
+
+
+
 //class for the bugs that are to be squished
 class Bug
 {
@@ -34,11 +43,13 @@ class Bug
     let distance = Math.sqrt(((this.sprite.x-mouseX)*(this.sprite.x-mouseX))+((this.sprite.y-mouseY)*(this.sprite.y-mouseY)));
     if (distance < 20 && !this.isDead)
     {
+      squishSound.start();
       currentBugSpeed += speedIncrement;
       this.sprite.velocity.x = 0;
       this.sprite.changeAni('squished');
       this.isDead = true;
       addToScore(1);
+      music.playbackRate += 0.01;
     }
   }
 
@@ -180,6 +191,10 @@ function addToScore(amount)
 //place bugs in new spawn positions off screen w/o movement
 function resetBugs()
 {
+  music.stop();
+  bugAmbience.stop();
+  gameOverSound.start();
+
   bugs.forEach(element => {
     element.sprite.velocity.x = 0;
     element.sprite.changeAni('walkLeft');
@@ -187,11 +202,17 @@ function resetBugs()
     element.sprite.y = randomYSpawn();
     currentBugSpeed = 1;
   });
+  
 }
 
 //BUILT-IN FUNCTIONS//
 function mouseClicked()
 {
+  if (gameState == 'running')
+  {
+    missSound.start();
+  }
+
   bugs.forEach(element => {
       element.handleClick();
   });
@@ -203,7 +224,20 @@ function preload()
   {
     spawnBug();
   }
+  music = new Tone.Player("assets/background_music.wav").toDestination();
+  music.playbackRate = 1;
+  music.loop = true;
   
+  gameOverSound = new Tone.Player("assets/game_over_sfx.wav").toDestination();
+  gameOverSound.volume.value = -9;
+
+  squishSound = new Tone.Player("assets/bug_squish_sfx.wav").toDestination();
+
+  missSound = new Tone.Player("assets/slap_sfx.wav").toDestination();
+
+  bugAmbience = new Tone.Player("assets/bug_ambience.wav").toDestination();
+  bugAmbience.loop = true;
+
 }
 
 function setup() {
@@ -267,6 +301,8 @@ function keyTyped()
   if (key === 's' && gameState == 'starting')
   {
     gameState = 'running';
+    bugAmbience.start();
+    music.start();
     startBugs();
   }
 
@@ -275,6 +311,9 @@ function keyTyped()
     timeRemaining = 30;
     currentScore = 0;
     gameState = 'running';
+    bugAmbience.start();
+    music.playbackRate = 1;
+    music.start();
     startBugs();
   }
 }
